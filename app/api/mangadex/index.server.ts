@@ -8,10 +8,13 @@ export function Mangadex() {
 
   const BASE_SERVER = `${AT_HOME}/server`
   const BASE_UPLOAD_COVER = `${BASE_UPLOAD}/covers`
+  const BASE_TAGS = `${BASE_URL}/tag`;
   const BASE_MANGA = `${BASE_URL}/manga`
   const BASE_COVER = `${BASE_URL}/cover`
   const BASE_AUTHOR = `${BASE_URL}/author`
   const BASE_CHAPTER = `${BASE_URL}/chapter`
+  const BASE_GROUP = `${BASE_URL}/group`;
+  const BASE_STATISTICS = `${BASE_URL}/statistics`;
 
   async function getMangas(offset: number, limit: number) {
     const searchParams = new URLSearchParams();
@@ -24,12 +27,12 @@ export function Mangadex() {
     const items = await Promise.all(result.data.map(async item => {
       const coverId = item.relationships.find(r => r.type === 'cover_art')?.id;
       const coverUrl = await getCover({coverId, mangaId: item.id});
-      const tags = item.attributes.tags.map(tag => tag.attributes.name.en);
+      const tags = item.attributes.tags.map(tag => tag.attributes.name?.en || "Tag não definida");
       const status = item.attributes.status;
       const latestChapter = item.attributes.lastChapter || "Não foi encontrado capítulos";
       const authorId = item.relationships.find((r) => r.type === 'author')?.id;
       const authorName = authorId ? await getAuthor(authorId) : 'Desconhecido';
-      const description = item.attributes.description;
+      const description = item.attributes.description?.en || item.attributes.description?.pt_br || "Descrição não disponível";
       const format = item.type;
 
       return {
@@ -123,6 +126,39 @@ export function Mangadex() {
     );
 
     return imageUrls;
+  }
+
+  async function getSeasonalInfo(mangasIds: any) {
+    const ids = mangasIds.reduce((acc: any, curr: any) => acc + curr, "");
+    const response = await fetch(`${BASE_MANGA}?includes[]=cover_art&order[followedCount]=desc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica${ids}&limit=12`,);
+    const result = await response.json();
+    
+    return result.data;
+  }
+
+  async function getLatestUpdateMangas(mangasIds: any) {
+    const ids = mangasIds.reduce((acc: any, curr: any) => acc + curr, '');
+    const response = await fetch(`${BASE_MANGA}?includes[]=cover_art${ids}&limit=24&contentRating[]=safe&contentRating[]`);
+    const result = await response.json();
+    return result.data;
+  }
+
+  async function getMangaFeed(mangaId: string) {
+    const response = await fetch(`${BASE_AUTHOR}/${mangaId}/feed`);
+    const result = await response.json();
+    return result.data;
+  }
+
+  async function getScanlationGroup(groupId: string) {
+    const response = await fetch(`${BASE_GROUP}/${groupId}`);
+    const result = await response.json();
+    return result.data;
+  }
+
+  async function getMangaStatistics(mangaId: string) {
+    const response = await fetch(`${BASE_STATISTICS}/manga/${mangaId}`);
+    const result = await response.json();
+    return result.data; 
   }
 
   return {

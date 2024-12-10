@@ -137,6 +137,32 @@ interface AuthorRelationship {
   type: string;
 }
 
+interface TagAttributes {
+  name: {
+    en: string;
+  };
+  description: Record<string, string>;
+  group: string;
+  version: number;
+}
+
+interface Tag {
+  id: string;
+  type: string;
+  attributes: TagAttributes;
+  relationships: any[];
+}
+
+export interface TagResponse {
+  result: string;
+  response: string;
+  data: Tag[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+
 /*
 
 interface ChapterAttributes {
